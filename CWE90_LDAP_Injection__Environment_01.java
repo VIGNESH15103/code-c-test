@@ -1,4 +1,4 @@
-name: "CodeQL C/C++ Security Analysis"
+name: "CodeQL Java Security Analysis"
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   analyze:
-    name: Analyze C/C++ Code
+    name: Analyze Java Code
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -24,15 +24,21 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: java  # For Java-based security analysis
+          languages: java  # Use 'java' for Java code analysis
 
-      - name: Build C/C++ code (Java project in this case)
+      - name: Set up JDK 17
         run: |
-          sudo apt update && sudo apt install -y build-essential
-          javac CWE90_LDAP_Injection__Environment_01.java
+          sudo apt update
+          sudo apt install -y openjdk-17-jdk
+          java -version  # Verify the JDK is installed
+
+      - name: Build Java code (if needed)
+        run: |
+          sudo apt install -y maven  # Use Maven to build the Java project
+          mvn clean install   # Build the project
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          format: json
-          output: results.json
+          format: sarif  # Set the output format to SARIF
+          output: codeql-results.sarif
