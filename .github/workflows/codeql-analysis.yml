@@ -1,4 +1,4 @@
-name: "CodeQL C/C++ Security Analysis"
+name: "CodeQL Java Security Analysis"
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   analyze:
-    name: Analyze C/C++ Code
+    name: Analyze Java Code
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -24,16 +24,21 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: cpp  # CodeQL uses 'cpp' for both C and C++
+          languages: java  # Use 'java' for Java code analysis
 
-      - name: Build C/C++ code
+      - name: Set up JDK 17
         run: |
-          sudo apt update && sudo apt install -y build-essential
-          gcc -o test_program CWE761_Free_Pointer_Not_at_Start_of_Buffer__char_environment_02.c
+          sudo apt update
+          sudo apt install -y openjdk-17-jdk
+          java -version  # Verify the JDK is installed
+
+      - name: Build Java code (if needed)
+        run: |
+          sudo apt install -y maven  # Use Maven to build the Java project
+          mvn clean install   # Build the project
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          format: json
-          output: results.json
-
+          format: sarif  # Set the output format to SARIF
+          output: codeql-results.sarif
