@@ -1,161 +1,38 @@
-/* TEMPLATE GENERATED TESTCASE FILE
-Filename: CWE90_LDAP_Injection__Environment_01.java
-Label Definition File: CWE90_LDAP_Injection.label.xml
-Template File: sources-sink-01.tmpl.java
-*/
-/*
-* @description
-* CWE: 90 LDAP Injection
-* BadSource: Environment Read data from an environment variable
-* GoodSource: A hardcoded string
-* BadSink:  data concatenated into LDAP search, which could result in LDAP Injection
-* Flow Variant: 01 Baseline
-*
-* */
+name: "CodeQL C/C++ Security Analysis"
 
-package testcases.CWE90_LDAP_Injection;
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 12 * * 1'  # Runs every Monday at 12:00 UTC
 
-import testcasesupport.*;
+jobs:
+  analyze:
+    name: Analyze C/C++ Code
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
 
-import javax.servlet.http.*;
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-import javax.naming.*;
-import javax.naming.directory.*;
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java  # For Java-based security analysis
 
-import java.util.Hashtable;
-import java.util.logging.Level;
+      - name: Build C/C++ code (Java project in this case)
+        run: |
+          sudo apt update && sudo apt install -y build-essential
+          javac CWE90_LDAP_Injection__Environment_01.java
 
-public class CWE90_LDAP_Injection__Environment_01 extends AbstractTestCase
-{
-    /* uses badsource and badsink */
-    public void bad() throws Throwable
-    {
-        String data;
-
-        /* get environment variable ADD */
-        /* POTENTIAL FLAW: Read data from an environment variable */
-        data = System.getenv("ADD");
-
-        Hashtable<String, String> environmentHashTable = new Hashtable<String, String>();
-        environmentHashTable.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
-        environmentHashTable.put(Context.PROVIDER_URL, "ldap://localhost:389");
-        DirContext directoryContext = null;
-
-        try
-        {
-            directoryContext = new InitialDirContext(environmentHashTable);
-            /* POTENTIAL FLAW: data concatenated into LDAP search, which could result in LDAP Injection */
-            String search = "(cn=" + data + ")";
-
-            NamingEnumeration<SearchResult> answer = directoryContext.search("", search, null);
-            while (answer.hasMore())
-            {
-                SearchResult searchResult = answer.next();
-                Attributes attributes = searchResult.getAttributes();
-                NamingEnumeration<?> allAttributes = attributes.getAll();
-                while (allAttributes.hasMore())
-                {
-                    Attribute attribute = (Attribute) allAttributes.next();
-                    NamingEnumeration<?> allValues = attribute.getAll();
-                    while(allValues.hasMore())
-                    {
-                        IO.writeLine(" Value: " + allValues.next().toString());
-                    }
-                }
-            }
-        }
-        catch (NamingException exceptNaming)
-        {
-            IO.logger.log(Level.WARNING, "The LDAP service was not found or login failed.", exceptNaming);
-        }
-        finally
-        {
-            if (directoryContext != null)
-            {
-                try
-                {
-                    directoryContext.close();
-                }
-                catch (NamingException exceptNaming)
-                {
-                    IO.logger.log(Level.WARNING, "Error closing DirContext", exceptNaming);
-                }
-            }
-        }
-
-    }
-
-    public void good() throws Throwable
-    {
-        goodG2B();
-    }
-
-    /* goodG2B() - uses goodsource and badsink */
-    private void goodG2B() throws Throwable
-    {
-        String data;
-
-        /* FIX: Use a hardcoded string */
-        data = "foo";
-
-        Hashtable<String, String> environmentHashTable = new Hashtable<String, String>();
-        environmentHashTable.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
-        environmentHashTable.put(Context.PROVIDER_URL, "ldap://localhost:389");
-        DirContext directoryContext = null;
-
-        try
-        {
-            directoryContext = new InitialDirContext(environmentHashTable);
-            /* POTENTIAL FLAW: data concatenated into LDAP search, which could result in LDAP Injection */
-            String search = "(cn=" + data + ")";
-
-            NamingEnumeration<SearchResult> answer = directoryContext.search("", search, null);
-            while (answer.hasMore())
-            {
-                SearchResult searchResult = answer.next();
-                Attributes attributes = searchResult.getAttributes();
-                NamingEnumeration<?> allAttributes = attributes.getAll();
-                while (allAttributes.hasMore())
-                {
-                    Attribute attribute = (Attribute) allAttributes.next();
-                    NamingEnumeration<?> allValues = attribute.getAll();
-                    while(allValues.hasMore())
-                    {
-                        IO.writeLine(" Value: " + allValues.next().toString());
-                    }
-                }
-            }
-        }
-        catch (NamingException exceptNaming)
-        {
-            IO.logger.log(Level.WARNING, "The LDAP service was not found or login failed.", exceptNaming);
-        }
-        finally
-        {
-            if (directoryContext != null)
-            {
-                try
-                {
-                    directoryContext.close();
-                }
-                catch (NamingException exceptNaming)
-                {
-                    IO.logger.log(Level.WARNING, "Error closing DirContext", exceptNaming);
-                }
-            }
-        }
-
-    }
-
-    /* Below is the main(). It is only used when building this testcase on
-     * its own for testing or for building a binary to use in testing binary
-     * analysis tools. It is not used when compiling all the testcases as one
-     * application, which is how source code analysis tools are tested.
-     */
-    public static void main(String[] args) throws ClassNotFoundException,
-           InstantiationException, IllegalAccessException
-    {
-        mainFromParent(args);
-    }
-}
-
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          format: json
+          output: results.json
